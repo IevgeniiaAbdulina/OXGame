@@ -1,465 +1,320 @@
 const web = {
-  init: function () {
-    // ==================== VARIABLES 
-    const startScreen = document.getElementById("startScreen");
-    const boardScreen = document.getElementById("gameBoard");
-    const boardContainer = document.getElementById('gameGrid');
-    const board = document.querySelector('.grid-container');
-    const boardFields = document.querySelectorAll(".item");
-    const avatars1 = document.querySelectorAll('#avatars1');
-    const avatars2 = document.querySelectorAll('#avatars2');
-    // ==================== SOUNDS
-    const soundPlayer1 = document.querySelector('audio.whoomp');
-    const soundPlayer2 = document.querySelector('audio.wheemp');
-    const soundEnd = document.querySelector('audio.tada');
-    // ==================== inputs
-    const p1inp = document.getElementById("player1Name");
-    const p2inp = document.getElementById("player2Name");
-    // ==================== buttons
-    const play = document.getElementById("play");
-    const newGameBtn = document.getElementById("newGame");
-    const restartGameBtn = document.getElementById("restartGame");
-    // ==================== to put text into
-    const turn = document.getElementById("turn");
-    const name1 = document.querySelector(".player-1-name");
-    const name2 = document.querySelector(".player-2-name");
-    const player1scoreTxt = document.getElementById("player-1-score");
-    const player2scoreTxt = document.getElementById("player-2-score");
-    // ====================
-    let currentTurn;
-    let player1score = 0;
-    let player2score = 0;
-    const winCombinations = [
-      ['012', '345', '678'],
-      ['036', '147', '258'],
-      ['048', '246']
-    ];
-    let winCombination;
+	init: function() {
+		const startScreen = document.getElementById('startScreen');
+		const boardScreen = document.getElementById('gameBoard');
+		const boardContainer = document.getElementById('gameGrid');
+		const board = document.querySelector('.grid-container');
+		const boardFields = document.querySelectorAll('.item');
+		const avatars1 = document.querySelectorAll('.avatars1 .avatar');
+		const avatars2 = document.querySelectorAll('.avatars2 .avatar');
+		const player1OnBoard = document.querySelector('.player1-container');
+		const player2OnBoard = document.querySelector('.player2-container');
+		const scoreTurnInfo = document.querySelector('.score-turn');
+		const score = document.querySelector('#score');
 
-    // ==================== FUNCTIONS
-    // ==================== validation
+		const soundPlayer1 = document.querySelector('audio.whoomp');
+		const soundPlayer2 = document.querySelector('audio.wheemp');
+		const soundEnd = document.querySelector('audio.tada');
 
-    // Returns true if player name is valid.
-    const validName = function (name) {
-      return name && name.length >= 3 && name.length <= 10;
-    };
+		const p1inp = document.getElementById('player1Name');
+		const p2inp = document.getElementById('player2Name');
 
-    // Shows alert under invalid player's name.
-    const showNameAlert = function (nameInput) {
-      const playerBox = nameInput.parentNode.parentNode;
-      if (playerBox.querySelector(".alert")) return;
+		const play = document.getElementById('play');
+		const newGameBtn = document.getElementById('newGame');
+		const restartGameBtn = document.getElementById('restartGame');
 
-      const alertBox = document.createElement("div");
-      alertBox.innerHTML =
-        "<p>Enter valid name between 3 and 10 characters.</p>";
-      alertBox.className = "alert";
-      playerBox.appendChild(alertBox);
-    };
+		const turn = document.getElementById('turn');
+		const name1 = document.querySelector('.player-1-name');
+		const name2 = document.querySelector('.player-2-name');
+		const player1scoreTxt = document.getElementById('player-1-score');
+		const player2scoreTxt = document.getElementById('player-2-score');
 
-    // Removes invalid name alert.
-    const clearNameAlert = function (nameInput) {
-      const playerBox = nameInput.parentNode.parentNode;
-      const alertBox = playerBox.querySelector(".alert");
-      if (alertBox) playerBox.removeChild(alertBox);
-    };
+		let currentTurn;
+		let stamp = 0;
+		let player1score = 0;
+		let player2score = 0;
 
-    // Returns true if board field given as an argument is valid.
-    const validField = function (field) {
-      return (!field.classList.contains('icon-x') && !field.classList.contains('icon-o'))
-    };
+		const randomStamp = function() {
+			let radom13chars = () => Math.random().toString(16).substring(2, 15);
+			let loops = Math.ceil(8 / 13);
+			return new Array(loops)
+				.fill(radom13chars)
+				.reduce((string, func) => {return string + func()}, '')
+				.substring(0, 8);
+		};
 
-    // Locks game board fields after the end of the game.
-    const lockBoard = function () {
-      boardFields.forEach(field => field.removeEventListener('click', pickField));
-      boardFields.forEach(field => field.classList.remove('unlocked'));
-    };
+		const renderLastGames = function() {
+			const lastGames =
+				JSON.parse(localStorage.getItem('last games')) || [];
+			if (!lastGames.length) return;
+			const infoBlock = document.querySelector('.info-block');
+			infoBlock.innerHTML = '<p>Last games:</p>';
+			lastGames.map(game => {
+				const info = document.createElement('p');
+				info.textContent = game.info;
+				infoBlock.appendChild(info);
+			});
+		};
 
-    // Locks game board fields after the end of the game.
-    const unlockBoard = function () {
-      boardFields.forEach(field => field.addEventListener("click", pickField));
-      boardFields.forEach(field => field.classList.add('unlocked'));
-    };
+		const saveGame = function() {
+			const lastGames = JSON.parse(localStorage.getItem('last games')) || [];
+			const gameInfo = `${name1.textContent} (${player1scoreTxt.textContent} pts) : (${player2scoreTxt.textContent} pts) ${name2.textContent}`;
+			if (lastGames.length > 0 && lastGames[0].stamp === stamp) {
+				lastGames[0].info = gameInfo;
+				localStorage.setItem('last games', JSON.stringify(lastGames));
+				return;
+			}
+			lastGames.unshift({stamp, info: gameInfo});
+			if (lastGames.length > 3) lastGames.pop();
+			localStorage.setItem('last games', JSON.stringify(lastGames));
+		};
 
-    // ==================== game-start
+		const validName = function(name) {
+			return name && name.length >= 3 && name.length <= 10;
+		};
 
-    // Switches to board screen
-    const switchToBoard = function () {
-      startScreen.style.display = 'none';
-      boardScreen.style.display = 'flex';
-    }
+		const showNameAlert = function(nameInput) {
+			const playerBox = nameInput.parentNode.parentNode;
+			if (playerBox.querySelector('.alert')) return;
 
-    // Sets avatar for the first player.
-    const pickAvatar1 = function (e) {
-      const userImg = document.getElementById('player-1-avatar');
-      const lastClass = userImg.classList.item(2);
-      userImg.classList.remove(lastClass);
-      userImg.classList.add(e.target.classList.item(1));
+			const alertBox = document.createElement('div');
+			alertBox.innerHTML =
+				'<p>Enter valid name between 3 and 10 characters.</p>';
+			alertBox.className = 'alert';
+			playerBox.appendChild(alertBox);
+		};
 
-      const playerImg1 = document.getElementById("playerOne");
-      playerImg1.classList.remove(lastClass);
-      playerImg1.classList.add(e.target.classList.item(1));
-    };
+		const clearNameAlert = function(nameInput) {
+			const playerBox = nameInput.parentNode.parentNode;
+			const alertBox = playerBox.querySelector('.alert');
+			if (alertBox) playerBox.removeChild(alertBox);
+		};
 
-    //Sets avatar for second player.
-    const pickAvatar2 = function (e) {
-      const userImg = document.getElementById('player-2-avatar');
-      const lastClass = userImg.classList.item(2);
-      userImg.classList.remove(lastClass);
-      userImg.classList.add(e.target.classList.item(1));
+		const validField = function(field) {
+			return (
+				!field.classList.contains('icon-x') &&
+				!field.classList.contains('icon-o')
+			);
+		};
 
-      const playerImg2 = document.getElementById("playerTwo");
-      playerImg2.classList.remove(lastClass);
-      playerImg2.classList.add(e.target.classList.item(1));
-    };
+		const lockBoard = function() {
+			boardFields.forEach(field =>
+				field.removeEventListener('click', pickField)
+			);
+			boardFields.forEach(field => field.classList.remove('unlocked'));
+		};
 
-    // Sets players names, draws the first turn, navigates to the game board.
-    const run = function () {
-      // Check if first name is valid
-      if (!validName(p1inp.value)) {
-        showNameAlert(p1inp);
-        return;
-      }
-      clearNameAlert(p1inp);
-      // Check if second name is valid
-      if (!validName(p2inp.value)) {
-        showNameAlert(p2inp);
-        return;
-      }
-      clearNameAlert(p2inp);
-      // Display users names
-      name1.innerText = p1inp.value;
-      name2.innerText = p2inp.value;
-      // Draw first turn
-      currentTurn = Math.floor(Math.random() * 2);
-      turn.innerHTML = `It's ${currentTurn?p2inp.value:p1inp.value}'s turn.`;
-      // Display players score
-      player1scoreTxt.innerText = player1score;
-      player2scoreTxt.innerText = player2score;
-      // Navigate to game board
-      switchToBoard();
-      unlockBoard();
-    };
+		const restartBoard = function() {
+			board.style.display = 'grid';
+			boardFields.forEach(field => {
+				field.classList.remove('icon-o');
+				field.classList.remove('icon-x');
+			});
+			player1OnBoard.style.display = 'grid';
+			player2OnBoard.style.display = 'grid';
+			scoreTurnInfo.style.display = 'flex';
+			const winAlert = document.querySelector('.winnerScreen');
+			if (winAlert) winAlert.remove();
+			const drawAlert = document.querySelector('.drawScreen');
+			if (drawAlert) drawAlert.remove();
+		};
 
-    // ==================== game-course
+		const unlockBoard = function() {
+			boardFields.forEach(field =>
+				field.addEventListener('click', pickField)
+			);
+			boardFields.forEach(field => field.classList.add('unlocked'));
+		};
 
-    //Changes the turn and displays name of the player to play.
-    const changeTurn = function (e) {
-      if (currentTurn) {
-        currentTurn--;
-        turn.innerHTML = `${p1inp.value}'s turn.`;
-      } else {
-        currentTurn++;
-        turn.innerHTML = `${p2inp.value}'s turn.`;
-      }
-    };
+		const switchToBoard = function() {
+			startScreen.style.display = 'none';
+			boardScreen.style.display = 'flex';
+		};
 
-    //Draws line on the game board and shows winning combination.
-    const drawLine = function (combination) {
-      const combClass = `combination-${combination}`;
-      const gameBoard = document.getElementById('gameGrid');
-      const line = document.createElement('div');
-      line.classList.add('winning-line');
-      line.classList.add(combClass);
-      gameBoard.appendChild(line);
+		const switchToStart = function() {
+			startScreen.style.display = 'flex';
+			boardScreen.style.display = 'none';
+		};
 
-      setTimeout(() => {
-        gameBoard.removeChild(line);
-      }, 2000)
-    }
+		const drawTurn = function() {
+			currentTurn = Boolean(Math.floor(Math.random() * 2));
+			turn.innerHTML = `${
+				currentTurn ? p2inp.value : p1inp.value
+			}'s turn.`;
+			score.style.color = currentTurn ? '#b5ead3' : '#FD8328';
+		};
 
-    //====================== Ievgeniia
-    //Add symbols on board
-    const x = "x";
-    const o = "o";
-    const empty = null;
+		const changeTurn = function() {
+			currentTurn = !currentTurn;
+			turn.innerHTML = `${
+				currentTurn ? p2inp.value : p1inp.value
+			}'s turn.`;
+			score.style.color = currentTurn ? '#b5ead3' : '#FD8328';
+		};
 
-    // Create Game board array
-    let arrBoard = [
-      [empty, empty, empty],
-      [empty, empty, empty],
-      [empty, empty, empty]
-    ];
-    //.................................
+		const pickAvatar1 = function(e) {
+			const imgSrc = getComputedStyle(e.target).backgroundImage;
+			const userAvatar = document.getElementById('player-1-avatar');
+			userAvatar.style.backgroundImage = imgSrc;
+		};
 
-    // If field is available adds right figure on a board field depending on the current turn.
-    const pickField = function (e) {
-      if (validField(e.target)) {
-        currentTurn ? soundPlayer2.play() : soundPlayer1.play();
-        e.target.classList.add(currentTurn ? "icon-o" : "icon-x");
-        e.target.classList.remove('unlocked');
+		const pickAvatar2 = function(e) {
+			const imgSrc = getComputedStyle(e.target).backgroundImage;
+			const userAvatar = document.getElementById('player-2-avatar');
+			userAvatar.style.backgroundImage = imgSrc;
+		};
 
-        // Check if game met win or draw
-        const fieldID = e.target.classList[1];
-        const fieldSign = currentTurn ? "icon-o" : "icon-x";
-        clickInformation(fieldID, fieldSign);
-        const result = checkBoard();
-        if (result == "x winner" || result == "o winner") {
-          // Update players score
-          result == 'x winner' ? player1score++ : player2score++;
-          player1scoreTxt.innerText = player1score;
-          player2scoreTxt.innerText = player2score;
-          // Show result
-          soundEnd.play();
-          lockBoard();
-          drawLine(winCombination);
-          setTimeout(() => showWinner(result), 2000);
-        } else if (!emptyCellDetected()) {
-          lockBoard();
-          setTimeout(showDraw, 2000);
-        }
-        changeTurn();
-      }
-    };
+		const run = function() {
+			if (!validName(p1inp.value)) {
+				showNameAlert(p1inp);
+				return;
+			}
+			clearNameAlert(p1inp);
 
-    //============== Ievgeniia
-    function clickInformation(indexBox, indexPlyerBox) {
-      let boardSymbol = empty;
-      if (indexPlyerBox === "icon-x") {
-        boardSymbol = x;
-      } else {
-        boardSymbol = o;
-      }
+			if (!validName(p2inp.value)) {
+				showNameAlert(p2inp);
+				return;
+			}
+			clearNameAlert(p2inp);
 
-      switch (indexBox) {
-        case "item-11":
-          arrBoard[0][0] = boardSymbol;
-          break;
-        case "item-12":
-          arrBoard[0][1] = boardSymbol;
-          break;
-        case "item-13":
-          arrBoard[0][2] = boardSymbol;
-          break;
-        case "item-21":
-          arrBoard[1][0] = boardSymbol;
-          break;
-        case "item-22":
-          arrBoard[1][1] = boardSymbol;
-          break;
-        case "item-23":
-          arrBoard[1][2] = boardSymbol;
-          break;
-        case "item-31":
-          arrBoard[2][0] = boardSymbol;
-          break;
-        case "item-32":
-          arrBoard[2][1] = boardSymbol;
-          break;
-        case "item-33":
-          arrBoard[2][2] = boardSymbol;
-          break;
-      }
-    }
+			name1.innerText = p1inp.value;
+			name2.innerText = p2inp.value;
+			player1scoreTxt.innerText = player1score;
+			player2scoreTxt.innerText = player2score;
+			stamp = randomStamp();
+			drawTurn();
+			switchToBoard();
+			unlockBoard();
+		};
 
-    // Find the value in the cell
-    function valueCell(x, y) {
-      return arrBoard[y][x];
-    }
+		const drawLine = function(combination) {
+			const combClass = `combination-${combination}`;
+			const line = document.createElement('div');
+			line.classList.add('winning-line');
+			line.classList.add(combClass);
+			boardContainer.appendChild(line);
 
-    //Find horizontal array value
-    function checkHorizontal(y) {
-      var resultHorizontal = [];
-      for (var x = 0; x < 3; x++) {
-        resultHorizontal.push(valueCell(x, y));
-      }
-      return resultHorizontal;
-    }
+			setTimeout(() => {
+				boardContainer.removeChild(line);
+			}, 2000);
+		};
 
-    //Find vertical array value
-    function checkVertical(x) {
-      var resultVertical = [];
-      for (var y = 0; y < 3; y++) {
-        resultVertical.push(valueCell(x, y));
-      }
-      return resultVertical;
-    }
+		const winOrDraw = function() {
+			const winningCombinations = [
+				[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6],
+				[1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6],
+			];
+			const xMoves = [];
+			const oMoves = [];
+			let result = null;
 
-    //Find diagonal 1 array value
-    function diagonalOne() {
-      var resultDiagonalOne = [];
-      for (var i = 0; i < 3; i++) {
-        resultDiagonalOne.push(valueCell(i, i));
-      }
-      return resultDiagonalOne;
-    }
+			boardFields.forEach((field, index) => {
+				if (field.classList.contains('icon-x')) {
+					xMoves.push(index);
+				} else if (field.classList.contains('icon-o')) {
+					oMoves.push(index);
+				}
+			});
 
-    //Find diagonal 2 array value
-    function diagonalTwo() {
-      var resultDiagonalTwo = [];
-      var x = 2;
-      var y = 0;
-      for (y = 0; y < 3; y++) {
-        resultDiagonalTwo.push(valueCell(x, y));
-        x -= 1;
-      }
-      return resultDiagonalTwo;
-    }
+			winningCombinations.map(combination => {
+				if (combination.every(index => xMoves.includes(index))) {
+					result = ['win-X', combination.join('')];
+				} else if (combination.every(index => oMoves.includes(index))) {
+					result = ['win-O', combination.join('')];
+				}
+			});
+			if (xMoves.length + oMoves.length == boardFields.length) {
+				result = 'draw';
+			}
+			return result;
+		};
 
-    //Find matching values
-    let points1 = 0;
-    let points2 = 0;
+		function showWinner(winner) {
+			board.style.display = 'none';
+			scoreTurnInfo.style.display = 'none';
+			winner === 'win-X'
+				? (player2OnBoard.style.display = 'none')
+				: (player1OnBoard.style.display = 'none');
+			const winnerScreen = document.createElement('div');
+			winnerScreen.className = 'winnerScreen';
+			winnerScreen.innerHTML = 'Winner!';
+			boardContainer.insertBefore(
+				winnerScreen,
+				boardContainer.firstChild
+			);
+		}
 
-    function findWinner(results) {
-      let counterX = 0;
-      let counterO = 0;
-      for (i = 0; i < results.length; i++) {
-        if (results[i] === x) {
-          counterX++;
-        }
-        if (results[i] === o) {
-          counterO++;
-        }
-      }
+		function showDraw() {
+			board.style.display = 'none';
+			const drawScreen = document.createElement('div');
+			drawScreen.className = 'winnerScreen';
+			drawScreen.innerHTML = 'Draw!';
+			boardContainer.insertBefore(drawScreen, boardContainer.firstChild);
+		}
 
-      if (counterX == 3) {
-        points1++;
-        document.getElementById("player-1-score").innerHTML = points1;
-        return x;
-      }
-      if (counterO == 3) {
-        points2++;
-        document.getElementById("player-2-score").innerHTML = points2;
-        return o;
-      }
-      return empty;
-    }
+		const newGame = function() {
+			restartBoard();
+			renderLastGames();
+			switchToStart();
+			player1score = 0;
+			player2score = 0;
+			name1.innerText = 0;
+			name2.innerText = 0;
+			p1inp.value = '';
+			p2inp.value = '';
+		};
 
-    // Check all board and find the winner or draw
-    function checkBoard() {
-      // Check rows
-      for (var i = 0; i < 3; i++) {
-        var result = findWinner(checkHorizontal(i));
-        if (result === x) {
-          winCombination = winCombinations[0][i];
-          return "x winner";
-        } else if (result === o) {
-          winCombination = winCombinations[0][i];
-          return "o winner";
-        }
-        //Check columns
-        result = findWinner(checkVertical(i));
-        if (result === x) {
-          winCombination = winCombinations[1][i];
-          return "x winner";
-        } else if (result === o) {
-          winCombination = winCombinations[1][i];
-          return "o winner";
-        }
-      }
+		const restartGame = function() {
+			restartBoard();
+			unlockBoard();
+			drawTurn();
+		};
 
-      //Check diagonal 1
-      var diagonalOneRes = findWinner(diagonalOne());
-      if (diagonalOneRes === x) {
-        winCombination = winCombinations[2][0];
-        return "x winner";
-      } else if (diagonalOneRes === o) {
-        winCombination = winCombinations[2][0];
-        return "o winner";
-      }
+		const pickField = function(e) {
+			if (!validField(e.target)) return;
+			currentTurn ? soundPlayer2.play() : soundPlayer1.play();
+			soundPlayer1.currentTime = 0;
+			soundPlayer2.currentTime = 0;
+			e.target.classList.add(currentTurn ? 'icon-o' : 'icon-x');
+			e.target.classList.remove('unlocked');
 
-      //Check diagonal 2
-      var diagonalTwoRes = findWinner(diagonalTwo());
-      if (diagonalTwoRes === x) {
-        winCombination = winCombinations[2][1];
-        return "x winner";
-      } else if (diagonalTwoRes === o) {
-        winCombination = winCombinations[2][1];
-        return "o winner";
-      }
-      return empty;
-    }
+			const result = winOrDraw();
+			if (Array.isArray(result)) {
+				lockBoard();
+				drawLine(result[1]);
+				soundEnd.play();
+				if (result[0] === 'win-X') {
+					player1score++;
+					player1scoreTxt.innerText = player1score;
+				} else {
+					player2score++;
+					player2scoreTxt.innerText = player2score;
+				}
+				saveGame();
+				setTimeout(() => {
+					showWinner(result[0]);
+				}, 2000);
+				return;
+			} else if (result) {
+				lockBoard();
+				saveGame();
+				setTimeout(() => {
+					showDraw();
+				}, 1000);
+				return;
+			}
+			changeTurn();
+		};
 
-
-    //Find combination for Draw 
-    function emptyCellDetected() {
-      function emptyFieldMatch(element) {
-        return element === empty;
-      }
-
-      for (let i = 0; i < 3; i++) {
-        if (arrBoard[i].findIndex(emptyFieldMatch) !== -1) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    //<<<<<<<<<<< WINNER SCREEN >>>>>>>>>>>
-    function showWinner(winner) {
-      //Make game board invisible >>
-      board.style.display = 'none';
-      //Create a NEW element >>
-      const winnerScreen = document.createElement('div');
-      winnerScreen.id = 'winnerScreen';
-      //Put a new element before child element >>
-      boardContainer.insertBefore(winnerScreen, boardContainer.firstChild);
-      //show only winner Player1
-      let hiddenPlayer;
-      if (winner == "x winner") {
-        hiddenPlayer = document.querySelector('.player2-container');
-      } else if (winner == "o winner") {
-        hiddenPlayer = document.querySelector('.player1-container');
-      }
-      hiddenPlayer.style.display = 'none';
-      //Hide Score
-      document.querySelector('.score-turn').style.display = 'none';
-      //Add inner text to the new 'winnerScreen' element >>
-      winnerScreen.innerHTML = 'Winner!';
-      //Add styles to the new 'winnerScreen' element >>
-      winnerScreen.style.cssText = 'width: 360px; height: auto; margin-bottom: 20%; background: transparent; padding-top: 36px; font-size: 64px; line-height: 75px; font-weight: bold; text-transform: uppercase; color: #FD8328';
-    }
-
-    //<<<<<<<<<<<< DRAW SCREEN >>>>>>>>>>>
-    function showDraw() {
-      const endScreen = document.querySelector('.grid-container');
-      endScreen.style.display = 'none';
-
-      const winnerScreen = document.createElement("div");
-      winnerScreen.setAttribute('id', 'winnerScreen');
-
-      var gameGrid = document.getElementById('gameGrid');
-      var theFirstChildRow = gameGrid.firstChild;
-      gameGrid.insertBefore(winnerScreen, theFirstChildRow);
-      //..................................................
-      winnerScreen.innerHTML = 'Draw!';
-      winnerScreen.style.cssText = 'width: 360px; height: auto; margin-bottom: 20%; background: transparent; padding-top: 36px; font-size: 64px; line-height: 75px; font-weight: bold; text-transform: uppercase; color: #FBC375';
-    }
-
-    //=======================MAGDA
-    // new Game function
-    const newGame = function () {
-      window.location.reload(true);
-    }
-    // restart Game function
-    const restartGame = function () {
-      //Restart game conditions
-      arrBoard = [
-        [empty, empty, empty],
-        [empty, empty, empty],
-        [empty, empty, empty]
-      ];
-      result = null;
-      //Unhiding players
-      document.querySelector('.player1-container').style.display = 'grid';
-      document.querySelector('.player2-container').style.display = 'grid';
-      // Hiding Draw! or Winner!
-      document.getElementById('winnerScreen').remove();
-      // Unhiding score
-      document.querySelector('.score-turn').style.display = "inline-block";
-      // Restart board 
-      board.style.display = 'grid';
-      boardFields.forEach(field => {
-        field.classList.remove('icon-o');
-        field.classList.remove('icon-x');
-      });
-      unlockBoard();
-    }
-    // ==================== EVENT LISTENERS
-    avatars1.forEach(avatar => avatar.addEventListener('click', pickAvatar1));
-    avatars2.forEach(avatar => avatar.addEventListener('click', pickAvatar2));
-    play.addEventListener("click", run);
-    newGameBtn.addEventListener("click", newGame);
-    restartGameBtn.addEventListener("click", restartGame);
-
-  } // <-- end of init function
-}; // <-- end of web obj.
+		renderLastGames();
+		avatars1.forEach(avatar =>
+			avatar.addEventListener('click', pickAvatar1)
+		);
+		avatars2.forEach(avatar =>
+			avatar.addEventListener('click', pickAvatar2)
+		);
+		play.addEventListener('click', run);
+		newGameBtn.addEventListener('click', newGame);
+		restartGameBtn.addEventListener('click', restartGame);
+	},
+};

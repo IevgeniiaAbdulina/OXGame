@@ -24,31 +24,28 @@ The purpose of the project was a group work during the CodersCamp bootcamp. Our 
 * JavaScript
 
 ## Demo
-Demo version available here: https://dariaka.github.io/OXGame/
+Demo version available [here](https://dariaka.github.io/OXGame/).
 Have fun! :)
 
 ## How to play
-Just kidding, everyone knows that, right? Right? ;)
-https://www.youtube.com/watch?v=ub6FIPpojoI
+Just kidding, everyone knows that, right? [Right?](https://www.youtube.com/watch?v=ub6FIPpojoI) ;)
 
 ## Features
 What we managed to achive:
 * Switching between start and board screen.
 * Board fields lock after putting a sign on them.
 * The game board locks itself after win or draw.
+* Use Local Storage to information about last three games.
 * Our app is responsive.
 * It works and looks nice :)
 
-To-do list:
-* Code refactoring.
+Ideas on how to make our app even better:
 * Add more sound effects and button to switch off/on sound.
-* Use Local Storage to keep players names and score.
-* Display information about last three games.
 * Playing against computer (AI)
 * Animations
 
 ## Status
-Project is: _in progress_.
+Project is: _finished_.
 
 ## Copyrights
 All icons used in project as avatars are made by Freepik (come from https://www.flaticon.com/).
@@ -58,10 +55,10 @@ Audio files used in project come from http://soundbible.com/
 * Ta Da-SoundBible.com-1884170640 - recorded by Mike Koenig -  Attribution 3.0
 
 ## Authors
-Created by CodersCamp's members under the supervision of Małgorzata Bousoltane:
-[@Ievgeniia Abdulina](https://github.com/IevgeniiaAbdulina)
-[@Iwona](https://github.com/Crazysh8)
-[@Daria Kawalec](https://github.com/dariaka)
-[@Olimpia Kwiecień](https://github.com/kvviecien)
-[@OMagdalena Szczech](https://github.com/magdalenaszczech)
+Created by CodersCamp's members under the supervision of [@Małgorzata Bousoltane](https://github.com/MalgoskaBou):<br/>
+[@Ievgeniia Abdulina](https://github.com/IevgeniiaAbdulina)<br/>
+[@Iwona](https://github.com/Crazysh8)<br/>
+[@Daria Kawalec](https://github.com/dariaka)<br/>
+[@Olimpia Kwiecień](https://github.com/kvviecien)<br/>
+[@Magdalena Szczech](https://github.com/magdalenaszczech)<br/>
 [@Piotr Wolniak](https://github.com/PiotrWolniak)
