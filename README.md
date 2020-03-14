@@ -2,6 +2,12 @@
 > A simple TicTacToe game for two players build in vanilla JavaScript, along with HTML5 and CSS3.<br/>
 > Demo version available here https://dariaka.github.io/OXGame/.
 
+## General info
+The purpose of the project was a group work during the CodersCamp bootcamp. Our motivation is to build the very first game and have fun!
+
+## Screenshots
+![Screenshot](./img/screenshot.png)
+
 ## Table of contents
 * [General info](#general-info)
 * [Screenshots](#screenshots)
@@ -12,12 +18,6 @@
 * [Status](#status)
 * [Copyrights](#copyrights)
 * [Authors](#authors)
-
-## General info
-The purpose of the project was a group work during the CodersCamp bootcamp. Our motivation is to build the very first game and have fun!
-
-## Screenshots
-![Screenshot](./img/screenshot.png)
 
 ## Technologies
 * HTML5
